@@ -78,21 +78,23 @@ function DistributionBlock<T extends string>({
   options,
   values,
 }: DistributionBlockProps<T>) {
-  const total = values.length;
+  const answeredValues = values.filter((v) => v !== '');
+  const answeredCount = answeredValues.length;
+  const skippedCount = values.length - answeredCount;
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
       <div className="flex items-start justify-between gap-4">
         <h3 className="text-base font-semibold text-slate-900 leading-snug">{title}</h3>
         <span className="text-xs font-mono tabular-nums text-slate-500 shrink-0 pt-0.5">
-          응답 {total}건
+          응답 {answeredCount}건{skippedCount > 0 ? ` · 미응답 ${skippedCount}건` : ''}
         </span>
       </div>
 
       <div className="space-y-3">
         {options.map((option) => {
-          const count = values.filter((v) => v === option.value).length;
-          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+          const count = answeredValues.filter((v) => v === option.value).length;
+          const pct = answeredCount > 0 ? Math.round((count / answeredCount) * 100) : 0;
 
           return (
             <div key={option.value} className="space-y-1.5">
@@ -183,11 +185,11 @@ export function ResponsesDashboard() {
             id: docSnap.id,
             trainingStage: data.trainingStage,
             ftdImpact: data.ftdImpact,
-            ftdNecessity: data.ftdNecessity,
-            ftdOperationMode: data.ftdOperationMode,
-            neededSubjects: data.neededSubjects,
-            unnecessaryReasons: data.unnecessaryReasons,
-            groundTrainingSuggestions: data.groundTrainingSuggestions,
+            ftdNecessity: data.ftdNecessity ?? '',
+            ftdOperationMode: data.ftdOperationMode ?? '',
+            neededSubjects: data.neededSubjects ?? '',
+            unnecessaryReasons: data.unnecessaryReasons ?? '',
+            groundTrainingSuggestions: data.groundTrainingSuggestions ?? '',
             createdAtMs: createdAt ? createdAt.toMillis() : 0,
           };
         });
@@ -232,18 +234,26 @@ export function ResponsesDashboard() {
     const positiveImpact = filteredResponses.filter(
       (r) => r.ftdImpact === 'a' || r.ftdImpact === 'b',
     ).length;
-    const needed = filteredResponses.filter(
+    const necessityResponses = filteredResponses.filter((r) => r.ftdNecessity !== '');
+    const needed = necessityResponses.filter(
       (r) => r.ftdNecessity === 'a' || r.ftdNecessity === 'b',
     ).length;
-    const regularCurriculum = filteredResponses.filter(
+    const modeResponses = filteredResponses.filter((r) => r.ftdOperationMode !== '');
+    const regularCurriculum = modeResponses.filter(
       (r) => r.ftdOperationMode === 'a',
     ).length;
 
     return {
       total,
       positiveImpactPct: Math.round((positiveImpact / total) * 100),
-      neededPct: Math.round((needed / total) * 100),
-      regularCurriculumPct: Math.round((regularCurriculum / total) * 100),
+      neededPct:
+        necessityResponses.length > 0
+          ? Math.round((needed / necessityResponses.length) * 100)
+          : 0,
+      regularCurriculumPct:
+        modeResponses.length > 0
+          ? Math.round((regularCurriculum / modeResponses.length) * 100)
+          : 0,
     };
   }, [filteredResponses]);
 
@@ -524,30 +534,36 @@ export function ResponsesDashboard() {
           {[
             {
               title: QUESTION_TITLES.q5,
-              items: filteredResponses.map((r) => ({
-                id: r.id,
-                stage: r.trainingStage,
-                createdAtMs: r.createdAtMs,
-                text: r.neededSubjects,
-              })),
+              items: filteredResponses
+                .filter((r) => r.neededSubjects.trim().length > 0)
+                .map((r) => ({
+                  id: r.id,
+                  stage: r.trainingStage,
+                  createdAtMs: r.createdAtMs,
+                  text: r.neededSubjects,
+                })),
             },
             {
               title: QUESTION_TITLES.q6,
-              items: filteredResponses.map((r) => ({
-                id: r.id,
-                stage: r.trainingStage,
-                createdAtMs: r.createdAtMs,
-                text: r.unnecessaryReasons,
-              })),
+              items: filteredResponses
+                .filter((r) => r.unnecessaryReasons.trim().length > 0)
+                .map((r) => ({
+                  id: r.id,
+                  stage: r.trainingStage,
+                  createdAtMs: r.createdAtMs,
+                  text: r.unnecessaryReasons,
+                })),
             },
             {
               title: QUESTION_TITLES.q7,
-              items: filteredResponses.map((r) => ({
-                id: r.id,
-                stage: r.trainingStage,
-                createdAtMs: r.createdAtMs,
-                text: r.groundTrainingSuggestions,
-              })),
+              items: filteredResponses
+                .filter((r) => r.groundTrainingSuggestions.trim().length > 0)
+                .map((r) => ({
+                  id: r.id,
+                  stage: r.trainingStage,
+                  createdAtMs: r.createdAtMs,
+                  text: r.groundTrainingSuggestions,
+                })),
             },
           ].map((section, sIdx) => (
             <div key={sIdx} className="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
@@ -559,22 +575,26 @@ export function ResponsesDashboard() {
                   응답 {section.items.length}건
                 </span>
               </div>
-              <div className="divide-y divide-slate-100 max-h-[360px] overflow-y-auto pr-1">
-                {section.items.map((item) => (
-                  <div key={item.id} className="py-3 first:pt-0 last:pb-0 space-y-1">
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <span className="font-semibold text-slate-700">{item.stage}</span>
-                      <span aria-hidden="true">·</span>
-                      <span className="font-mono tabular-nums">
-                        {formatKoreanDateTime(item.createdAtMs)}
-                      </span>
+              {section.items.length === 0 ? (
+                <p className="text-sm text-slate-500">아직 작성된 의견이 없습니다.</p>
+              ) : (
+                <div className="divide-y divide-slate-100 max-h-[360px] overflow-y-auto pr-1">
+                  {section.items.map((item) => (
+                    <div key={item.id} className="py-3 first:pt-0 last:pb-0 space-y-1">
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="font-semibold text-slate-700">{item.stage}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="font-mono tabular-nums">
+                          {formatKoreanDateTime(item.createdAtMs)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
+                        {item.text}
+                      </p>
                     </div>
-                    <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
-                      {item.text}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -671,19 +691,19 @@ export function ResponsesDashboard() {
             <div>
               <dt className="font-semibold text-slate-900 mb-1">{QUESTION_TITLES.q5}</dt>
               <dd className="text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 rounded-lg border border-slate-200 p-3.5">
-                {currentIndividual.neededSubjects}
+                {currentIndividual.neededSubjects || '미응답'}
               </dd>
             </div>
             <div>
               <dt className="font-semibold text-slate-900 mb-1">{QUESTION_TITLES.q6}</dt>
               <dd className="text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 rounded-lg border border-slate-200 p-3.5">
-                {currentIndividual.unnecessaryReasons}
+                {currentIndividual.unnecessaryReasons || '미응답'}
               </dd>
             </div>
             <div>
               <dt className="font-semibold text-slate-900 mb-1">{QUESTION_TITLES.q7}</dt>
               <dd className="text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 rounded-lg border border-slate-200 p-3.5">
-                {currentIndividual.groundTrainingSuggestions}
+                {currentIndividual.groundTrainingSuggestions || '미응답'}
               </dd>
             </div>
           </dl>

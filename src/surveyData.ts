@@ -18,8 +18,8 @@ export interface StoredSurveyResponse {
   id: string;
   trainingStage: TrainingStage;
   ftdImpact: FiveScaleCode;
-  ftdNecessity: FiveScaleCode;
-  ftdOperationMode: OperationModeCode;
+  ftdNecessity: FiveScaleCode | '';
+  ftdOperationMode: OperationModeCode | '';
   neededSubjects: string;
   unnecessaryReasons: string;
   groundTrainingSuggestions: string;
@@ -111,5 +111,6 @@ export function getOptionLabel<T extends string>(
   options: ChoiceOption<T>[],
   value: string,
 ): string {
+  if (!value) return '미응답';
   return options.find((opt) => opt.value === value)?.label ?? value;
 }

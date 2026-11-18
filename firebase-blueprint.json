@@ -19,33 +19,33 @@
         },
         "ftdNecessity": {
           "type": "string",
-          "enum": ["a", "b", "c", "d", "e"],
+          "enum": ["a", "b", "c", "d", "e", ""],
           "maxLength": 8,
-          "description": "Q3: Necessity of pre-flight FTD practice"
+          "description": "Q3: Necessity of pre-flight FTD practice (optional)"
         },
         "ftdOperationMode": {
           "type": "string",
-          "enum": ["a", "b", "c"],
+          "enum": ["a", "b", "c", ""],
           "maxLength": 8,
-          "description": "Q4: Preferred FTD training operation mode"
+          "description": "Q4: Preferred FTD training operation mode (optional)"
         },
         "neededSubjects": {
           "type": "string",
-          "minLength": 1,
+          "minLength": 0,
           "maxLength": 2000,
-          "description": "Q5: Needed subjects or flight phases if FTD training is needed"
+          "description": "Q5: Needed subjects or flight phases if FTD training is needed (optional)"
         },
         "unnecessaryReasons": {
           "type": "string",
-          "minLength": 1,
+          "minLength": 0,
           "maxLength": 2000,
-          "description": "Q6: Reasons in order of importance if FTD training is deemed unnecessary"
+          "description": "Q6: Reasons in order of importance if FTD training is deemed unnecessary (optional)"
         },
         "groundTrainingSuggestions": {
           "type": "string",
-          "minLength": 1,
+          "minLength": 0,
           "maxLength": 2000,
-          "description": "Q7: Free-form suggestions for pre-flight ground training improvements"
+          "description": "Q7: Free-form suggestions for pre-flight ground training improvements (optional)"
         },
         "createdAt": {
           "type": "string",
@@ -56,11 +56,6 @@
       "required": [
         "trainingStage",
         "ftdImpact",
-        "ftdNecessity",
-        "ftdOperationMode",
-        "neededSubjects",
-        "unnecessaryReasons",
-        "groundTrainingSuggestions",
         "createdAt"
       ]
     },

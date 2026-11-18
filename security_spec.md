@@ -2,7 +2,7 @@
 
 ## 1. Data Invariants
 1. **No PII Collection**: `survey_responses` documents MUST NOT contain email addresses, names, phone numbers, or user IDs. Extra ("ghost") fields are rejected via `keys().hasOnly(...)`.
-2. **All 7 Questions Required**: Every created document in `/survey_responses/{responseId}` must contain all 7 fields (`trainingStage`, `ftdImpact`, `ftdNecessity`, `ftdOperationMode`, `neededSubjects`, `unnecessaryReasons`, `groundTrainingSuggestions`) plus `createdAt`.
+2. **Q1 & Q2 Required (Q3–Q7 Optional)**: Every created document in `/survey_responses/{responseId}` must contain `trainingStage` (Q1), `ftdImpact` (Q2), and `createdAt`. Optional fields (`ftdNecessity`, `ftdOperationMode`, `neededSubjects`, `unnecessaryReasons`, `groundTrainingSuggestions`) may be omitted or empty strings.
 3. **Strict Enum & Length Bounds**: Multiple-choice fields must match exact allowed option values; free-text fields must be non-empty strings `1..2000` chars.
 4. **Immutable Submissions & Server Timestamp**: `createdAt` must equal `request.time`. Updates to `survey_responses` are disabled (`allow update: if false`).
 5. **Admin-Only Read & Delete**: Only verified admins (`alamo99ko@gmail.com` with `email_verified == true` or listed in `/admins/{uid}`) may read (`get`/`list`) or delete responses. Anonymous respondents can only `create`.

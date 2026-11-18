@@ -60,25 +60,13 @@ function validateValues(values: SurveyFormValues): Partial<Record<QuestionKey, s
   if (!values.ftdImpact) {
     errors.ftdImpact = '필수 질문입니다. FTD 비행 연습의 영향을 선택해 주세요.';
   }
-  if (!values.ftdNecessity) {
-    errors.ftdNecessity = '필수 질문입니다. FTD 비행 연습의 필요성을 선택해 주세요.';
-  }
-  if (!values.ftdOperationMode) {
-    errors.ftdOperationMode = '필수 질문입니다. 희망하는 FTD 훈련 방식을 선택해 주세요.';
-  }
-  if (!values.neededSubjects.trim()) {
-    errors.neededSubjects = '필수 질문입니다. 의견을 입력해 주세요. (해당 없을 시 "해당 없음" 입력)';
-  } else if (values.neededSubjects.trim().length > MAX_TEXT_LENGTH) {
+  if (values.neededSubjects.trim().length > MAX_TEXT_LENGTH) {
     errors.neededSubjects = `최대 ${MAX_TEXT_LENGTH.toLocaleString()}자까지 입력할 수 있습니다.`;
   }
-  if (!values.unnecessaryReasons.trim()) {
-    errors.unnecessaryReasons = '필수 질문입니다. 의견을 입력해 주세요. (필요하다고 생각할 시 "해당 없음" 입력)';
-  } else if (values.unnecessaryReasons.trim().length > MAX_TEXT_LENGTH) {
+  if (values.unnecessaryReasons.trim().length > MAX_TEXT_LENGTH) {
     errors.unnecessaryReasons = `최대 ${MAX_TEXT_LENGTH.toLocaleString()}자까지 입력할 수 있습니다.`;
   }
-  if (!values.groundTrainingSuggestions.trim()) {
-    errors.groundTrainingSuggestions = '필수 질문입니다. 의견을 입력해 주세요. (개선사항이 없을 시 "없음" 입력)';
-  } else if (values.groundTrainingSuggestions.trim().length > MAX_TEXT_LENGTH) {
+  if (values.groundTrainingSuggestions.trim().length > MAX_TEXT_LENGTH) {
     errors.groundTrainingSuggestions = `최대 ${MAX_TEXT_LENGTH.toLocaleString()}자까지 입력할 수 있습니다.`;
   }
 
@@ -91,8 +79,9 @@ interface RadioQuestionCardProps<T extends string> {
   name: string;
   options: ChoiceOption<T>[];
   value: T | '';
+  required?: boolean;
   error?: string;
-  onChange: (value: T) => void;
+  onChange: (value: T | '') => void;
 }
 
 function RadioQuestionCard<T extends string>({
@@ -101,6 +90,7 @@ function RadioQuestionCard<T extends string>({
   name,
   options,
   value,
+  required = false,
   error,
   onChange,
 }: RadioQuestionCardProps<T>) {
@@ -119,17 +109,31 @@ function RadioQuestionCard<T extends string>({
           id={`${id}-label`}
           className="text-base sm:text-[17px] font-semibold text-slate-900 leading-snug"
         >
-          {title}{' '}
-          <span className="text-rose-600 font-semibold" aria-label="필수 항목">
-            *
-          </span>
+          {title}
+          {required && (
+            <>
+              {' '}
+              <span className="text-rose-600 font-semibold" aria-label="필수 항목">
+                *
+              </span>
+            </>
+          )}
         </h2>
+        {!required && value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="text-xs font-medium text-slate-500 hover:text-slate-800 px-2 py-1 rounded hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+          >
+            선택 해제
+          </button>
+        )}
       </div>
 
       <div
         role="radiogroup"
         aria-labelledby={`${id}-label`}
-        aria-required="true"
+        aria-required={required}
         className="space-y-2.5"
       >
         {options.map((option) => {
@@ -190,6 +194,7 @@ interface TextQuestionCardProps {
   value: string;
   placeholder: string;
   helperText: string;
+  required?: boolean;
   error?: string;
   onChange: (value: string) => void;
 }
@@ -200,6 +205,7 @@ function TextQuestionCard({
   value,
   placeholder,
   helperText,
+  required = false,
   error,
   onChange,
 }: TextQuestionCardProps) {
@@ -219,10 +225,15 @@ function TextQuestionCard({
           htmlFor={`${id}-input`}
           className="block text-base sm:text-[17px] font-semibold text-slate-900 leading-snug"
         >
-          {title}{' '}
-          <span className="text-rose-600 font-semibold" aria-label="필수 항목">
-            *
-          </span>
+          {title}
+          {required && (
+            <>
+              {' '}
+              <span className="text-rose-600 font-semibold" aria-label="필수 항목">
+                *
+              </span>
+            </>
+          )}
         </label>
       </div>
 
@@ -235,7 +246,7 @@ function TextQuestionCard({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        aria-required="true"
+        aria-required={required}
         aria-invalid={Boolean(error)}
         className={`w-full rounded-lg border px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 leading-relaxed resize-y min-h-[104px] transition-colors focus:outline-none ${
           error
@@ -280,6 +291,13 @@ export function SurveyForm() {
 
   const validationErrors = useMemo(() => validateValues(values), [values]);
   const visibleErrors = showValidation ? validationErrors : {};
+
+  const requiredCompletedCount = useMemo(() => {
+    let count = 0;
+    if (values.trainingStage) count += 1;
+    if (values.ftdImpact) count += 1;
+    return count;
+  }, [values.trainingStage, values.ftdImpact]);
 
   const completedCount = useMemo(() => {
     let count = 0;
@@ -446,19 +464,19 @@ export function SurveyForm() {
               <div>
                 <dt className="font-semibold text-slate-800 mb-1">{QUESTION_TITLES.q5}</dt>
                 <dd className="text-slate-600 whitespace-pre-wrap leading-relaxed">
-                  {submittedRecord.neededSubjects}
+                  {submittedRecord.neededSubjects || '미응답'}
                 </dd>
               </div>
               <div>
                 <dt className="font-semibold text-slate-800 mb-1">{QUESTION_TITLES.q6}</dt>
                 <dd className="text-slate-600 whitespace-pre-wrap leading-relaxed">
-                  {submittedRecord.unnecessaryReasons}
+                  {submittedRecord.unnecessaryReasons || '미응답'}
                 </dd>
               </div>
               <div>
                 <dt className="font-semibold text-slate-800 mb-1">{QUESTION_TITLES.q7}</dt>
                 <dd className="text-slate-600 whitespace-pre-wrap leading-relaxed">
-                  {submittedRecord.groundTrainingSuggestions}
+                  {submittedRecord.groundTrainingSuggestions || '미응답'}
                 </dd>
               </div>
             </dl>
@@ -519,10 +537,10 @@ export function SurveyForm() {
 
         <div className="mt-5 pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
           <span className="font-medium text-rose-700">
-            * 표시는 필수 질문입니다 (모든 항목 필수 응답)
+            * 표시는 필수 질문입니다 (1번, 2번 문항 필수)
           </span>
           <span className="text-slate-500 font-mono tabular-nums">
-            응답 진행: {completedCount} / 7
+            필수 {requiredCompletedCount} / 2 · 전체 {completedCount} / 7
           </span>
         </div>
       </div>
@@ -536,87 +554,94 @@ export function SurveyForm() {
           <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p className="font-semibold">
-              아직 답변하지 않은 필수 항목이 {Object.keys(validationErrors).length}개 있습니다.
+              아직 답변하지 않은 필수 항목(1~2번)이 {Object.keys(validationErrors).length}개 있습니다.
             </p>
             <p className="text-rose-700 mt-0.5">
-              모든 문항을 입력하신 후 다시 제출해 주세요.
+              표시된 필수 문항을 확인한 후 다시 제출해 주세요.
             </p>
           </div>
         </div>
       )}
 
-      {/* Question 1 */}
+      {/* Question 1 (Required) */}
       <RadioQuestionCard
         id={QUESTION_DOM_IDS.trainingStage}
         title={QUESTION_TITLES.q1}
         name="trainingStage"
         options={Q1_OPTIONS}
         value={values.trainingStage}
+        required={true}
         error={visibleErrors.trainingStage}
         onChange={(val) => updateField('trainingStage', val)}
       />
 
-      {/* Question 2 */}
+      {/* Question 2 (Required) */}
       <RadioQuestionCard
         id={QUESTION_DOM_IDS.ftdImpact}
         title={QUESTION_TITLES.q2}
         name="ftdImpact"
         options={Q2_OPTIONS}
         value={values.ftdImpact}
+        required={true}
         error={visibleErrors.ftdImpact}
         onChange={(val) => updateField('ftdImpact', val)}
       />
 
-      {/* Question 3 */}
+      {/* Question 3 (Optional) */}
       <RadioQuestionCard
         id={QUESTION_DOM_IDS.ftdNecessity}
         title={QUESTION_TITLES.q3}
         name="ftdNecessity"
         options={Q3_OPTIONS}
         value={values.ftdNecessity}
+        required={false}
         error={visibleErrors.ftdNecessity}
         onChange={(val) => updateField('ftdNecessity', val)}
       />
 
-      {/* Question 4 */}
+      {/* Question 4 (Optional) */}
       <RadioQuestionCard
         id={QUESTION_DOM_IDS.ftdOperationMode}
         title={QUESTION_TITLES.q4}
         name="ftdOperationMode"
         options={Q4_OPTIONS}
         value={values.ftdOperationMode}
+        required={false}
         error={visibleErrors.ftdOperationMode}
         onChange={(val) => updateField('ftdOperationMode', val)}
       />
 
-      {/* Question 5 */}
+      {/* Question 5 (Optional) */}
       <TextQuestionCard
         id={QUESTION_DOM_IDS.neededSubjects}
         title={QUESTION_TITLES.q5}
         value={values.neededSubjects}
-        helperText="필수 입력 항목입니다. FTD 훈련이 불필요하다고 생각하시는 경우 '해당 없음'을 입력해 주세요."
+        required={false}
+        helperText="선택 입력 항목입니다. FTD 훈련이 필요하다고 생각하시는 경우 구체적인 과목이나 비행단계를 적어주세요."
         placeholder="예: 장주 비행 절차, 계기 접근(ILS/VOR) 훈련, 비정상 절차 연습 등"
         error={visibleErrors.neededSubjects}
         onChange={(val) => updateField('neededSubjects', val)}
       />
 
-      {/* Question 6 */}
+      {/* Question 6 (Optional) */}
       <TextQuestionCard
         id={QUESTION_DOM_IDS.unnecessaryReasons}
         title={QUESTION_TITLES.q6}
         value={values.unnecessaryReasons}
-        helperText="필수 입력 항목입니다. FTD 훈련이 필요하다고 생각하시는 경우 '해당 없음'을 입력해 주세요."
+        required={false}
+        helperText="선택 입력 항목입니다. FTD 훈련이 불필요하다고 생각하시는 경우 중요한 순서대로 이유를 적어주세요."
         placeholder="필요하지 않다고 생각하시는 이유를 중요한 순서대로 작성해 주세요."
         error={visibleErrors.unnecessaryReasons}
         onChange={(val) => updateField('unnecessaryReasons', val)}
       />
 
-      {/* Question 7 */}
+      {/* Question 7 (Optional) */}
       <TextQuestionCard
         id={QUESTION_DOM_IDS.groundTrainingSuggestions}
         title={QUESTION_TITLES.q7}
         value={values.groundTrainingSuggestions}
-        helperText="필수 입력 항목입니다. 개선 또는 반영 사항이 없으신 경우 '없음' 또는 '현재 교육 만족' 등으로 입력해 주세요."
+        required={false}
+        helperText="선택 입력 항목입니다. 사전 지상교육 중 개선 및 반영이 필요한 사항을 자유롭게 작성해 주세요."
         placeholder="사전 지상교육 커리큘럼, 교보재, 스케줄 등 개선 의견을 자유롭게 기술해 주세요."
         error={visibleErrors.groundTrainingSuggestions}
         onChange={(val) => updateField('groundTrainingSuggestions', val)}
@@ -635,7 +660,7 @@ export function SurveyForm() {
           </button>
 
           <span className="text-xs sm:text-sm text-slate-500 font-mono tabular-nums">
-            {completedCount} / 7 완료
+            필수 {requiredCompletedCount} / 2 완료
           </span>
         </div>
 

@@ -31,11 +31,6 @@ service cloud.firestore {
       return data.keys().hasAll([
         'trainingStage',
         'ftdImpact',
-        'ftdNecessity',
-        'ftdOperationMode',
-        'neededSubjects',
-        'unnecessaryReasons',
-        'groundTrainingSuggestions',
         'createdAt'
       ])
       && data.keys().hasOnly([
@@ -49,22 +44,16 @@ service cloud.firestore {
         'createdAt'
       ])
       && data.trainingStage is string
+      && data.trainingStage.size() <= 32
       && data.trainingStage in ['PPL', 'IR', 'CPL', 'IP Time building']
       && data.ftdImpact is string
+      && data.ftdImpact.size() <= 8
       && data.ftdImpact in ['a', 'b', 'c', 'd', 'e']
-      && data.ftdNecessity is string
-      && data.ftdNecessity in ['a', 'b', 'c', 'd', 'e']
-      && data.ftdOperationMode is string
-      && data.ftdOperationMode in ['a', 'b', 'c']
-      && data.neededSubjects is string
-      && data.neededSubjects.size() >= 1
-      && data.neededSubjects.size() <= 2000
-      && data.unnecessaryReasons is string
-      && data.unnecessaryReasons.size() >= 1
-      && data.unnecessaryReasons.size() <= 2000
-      && data.groundTrainingSuggestions is string
-      && data.groundTrainingSuggestions.size() >= 1
-      && data.groundTrainingSuggestions.size() <= 2000
+      && (!('ftdNecessity' in data) || (data.ftdNecessity is string && data.ftdNecessity.size() <= 8 && data.ftdNecessity in ['', 'a', 'b', 'c', 'd', 'e']))
+      && (!('ftdOperationMode' in data) || (data.ftdOperationMode is string && data.ftdOperationMode.size() <= 8 && data.ftdOperationMode in ['', 'a', 'b', 'c']))
+      && (!('neededSubjects' in data) || (data.neededSubjects is string && data.neededSubjects.size() <= 2000))
+      && (!('unnecessaryReasons' in data) || (data.unnecessaryReasons is string && data.unnecessaryReasons.size() <= 2000))
+      && (!('groundTrainingSuggestions' in data) || (data.groundTrainingSuggestions is string && data.groundTrainingSuggestions.size() <= 2000))
       && data.createdAt is timestamp
       && data.createdAt == request.time;
     }
