@@ -67,6 +67,32 @@ function escapeCsvCell(value: string): string {
   return `"${escaped}"`;
 }
 
+function getKoreanAuthErrorMessage(error: unknown): string {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: unknown }).code)
+      : '';
+
+  switch (code) {
+    case 'auth/popup-blocked':
+      return '브라우저에서 로그인 팝업이 차단되었습니다. 주소창의 팝업 차단을 해제하거나 새 탭에서 페이지를 열어 다시 시도해 주세요.';
+    case 'auth/popup-closed-by-user':
+      return '로그인 창이 완료 전에 닫혔습니다. 다시 시도해 주세요.';
+    case 'auth/cancelled-popup-request':
+      return '이전 로그인 요청이 진행 중이어서 취소되었습니다. 잠시 후 다시 클릭해 주세요.';
+    case 'auth/unauthorized-domain':
+      return `현재 도메인(${window.location.hostname})이 Firebase 인증 허용 도메인에 등록되어 있지 않습니다.`;
+    case 'auth/operation-not-allowed':
+      return 'Firebase 프로젝트에서 Google 로그인이 활성화되어 있지 않습니다.';
+    case 'auth/network-request-failed':
+      return '네트워크 연결이 원활하지 않습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.';
+    default: {
+      const msg = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+      return `Google 로그인 중 문제가 발생했습니다: ${msg}`;
+    }
+  }
+}
+
 interface DistributionBlockProps<T extends string> {
   title: string;
   options: ChoiceOption<T>[];
@@ -122,6 +148,7 @@ export function ResponsesDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   const [responses, setResponses] = useState<StoredSurveyResponse[]>([]);
@@ -146,7 +173,10 @@ export function ResponsesDashboard() {
         return;
       }
 
-      if (currentUser.email === ADMIN_EMAIL && currentUser.emailVerified) {
+      if (
+        currentUser.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() &&
+        currentUser.emailVerified
+      ) {
         setIsAdmin(true);
         setAuthReady(true);
         return;
@@ -258,12 +288,15 @@ export function ResponsesDashboard() {
   }, [filteredResponses]);
 
   const handleSignIn = async () => {
+    if (isSigningIn) return;
     setAuthError(null);
+    setIsSigningIn(true);
     try {
       await signInAdmin();
     } catch (error) {
-      const msg = error instanceof Error ? error.message : '로그인에 실패했습니다.';
-      setAuthError(`Google 로그인 중 문제가 발생했습니다: ${msg}`);
+      setAuthError(getKoreanAuthErrorMessage(error));
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
@@ -351,10 +384,11 @@ export function ResponsesDashboard() {
           <button
             type="button"
             onClick={handleSignIn}
-            className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 transition-colors cursor-pointer whitespace-nowrap"
+            disabled={isSigningIn}
+            className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-800 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 transition-colors cursor-pointer whitespace-nowrap"
           >
             <LogIn className="w-4 h-4" aria-hidden="true" />
-            <span>관리자 Google 로그인</span>
+            <span>{isSigningIn ? '로그인 창 여는 중...' : '관리자 Google 로그인'}</span>
           </button>
         </div>
       </div>
