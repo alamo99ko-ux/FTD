@@ -81,7 +81,7 @@ function getKoreanAuthErrorMessage(error: unknown): string {
     case 'auth/cancelled-popup-request':
       return '이전 로그인 요청이 진행 중이어서 취소되었습니다. 잠시 후 다시 클릭해 주세요.';
     case 'auth/unauthorized-domain':
-      return `현재 도메인(${window.location.hostname})이 Firebase 인증 허용 도메인에 등록되어 있지 않습니다.`;
+      return `현재 도메인(${window.location.hostname})이 Firebase 인증 허용 도메인에 등록되어 있지 않습니다. Firebase 콘솔 > Authentication > 설정 > 승인된 도메인에 '${window.location.hostname}'을(를) 추가하거나 기본 공유 URL에서 로그인해 주세요.`;
     case 'auth/operation-not-allowed':
       return 'Firebase 프로젝트에서 Google 로그인이 활성화되어 있지 않습니다.';
     case 'auth/network-request-failed':
