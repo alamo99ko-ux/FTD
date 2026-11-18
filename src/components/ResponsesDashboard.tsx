@@ -75,20 +75,25 @@ function getKoreanAuthErrorMessage(error: unknown): string {
 
   switch (code) {
     case 'auth/popup-blocked':
-      return '브라우저에서 로그인 팝업이 차단되었습니다. 주소창의 팝업 차단을 해제하거나 새 탭에서 페이지를 열어 다시 시도해 주세요.';
+      return `[${code}] 브라우저에서 로그인 팝업이 차단되었습니다. 주소창의 팝업 차단을 해제하거나 새 탭에서 페이지를 열어 다시 시도해 주세요.`;
     case 'auth/popup-closed-by-user':
-      return '로그인 창이 완료 전에 닫혔습니다. 다시 시도해 주세요.';
+      return `[${code}] 로그인 창이 완료 전에 닫혔습니다. 다시 시도해 주세요.`;
     case 'auth/cancelled-popup-request':
-      return '이전 로그인 요청이 진행 중이어서 취소되었습니다. 잠시 후 다시 클릭해 주세요.';
+      return `[${code}] 이전 로그인 요청이 진행 중이어서 취소되었습니다. 잠시 후 다시 클릭해 주세요.`;
     case 'auth/unauthorized-domain':
-      return `현재 도메인(${window.location.hostname})이 Firebase 인증 허용 도메인에 등록되어 있지 않습니다. Firebase 콘솔 > Authentication > 설정 > 승인된 도메인에 '${window.location.hostname}'을(를) 추가하거나 기본 공유 URL에서 로그인해 주세요.`;
+      return `[${code}] 현재 도메인(${window.location.hostname})이 Firebase 인증 허용 도메인에 등록되어 있지 않습니다. Firebase 콘솔 > Authentication > 설정 > 승인된 도메인에 '${window.location.hostname}'을(를) 추가하거나 기본 공유 URL에서 로그인해 주세요.`;
+    case 'auth/internal-error':
+    case 'auth/web-storage-unsupported':
+      return `[${code}] 브라우저의 서드파티 쿠키 차단 또는 개인정보 보호 확장 프로그램으로 인해 Firebase 인증 창(${window.location.hostname} ↔ firebaseapp.com) 연결이 차단되었습니다. 시크릿 모드가 아닌 일반 창에서 서드파티 쿠키를 허용하거나 기본 공유 URL에서 로그인해 주세요.`;
     case 'auth/operation-not-allowed':
-      return 'Firebase 프로젝트에서 Google 로그인이 활성화되어 있지 않습니다.';
+      return `[${code}] Firebase 프로젝트에서 Google 로그인이 활성화되어 있지 않습니다.`;
     case 'auth/network-request-failed':
-      return '네트워크 연결이 원활하지 않습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.';
+      return `[${code}] 네트워크 연결이 원활하지 않습니다. 방화벽/네트워크 상태를 확인한 뒤 다시 시도해 주세요.`;
     default: {
       const msg = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
-      return `Google 로그인 중 문제가 발생했습니다: ${msg}`;
+      return code
+        ? `[${code}] Google 로그인 중 문제가 발생했습니다: ${msg}`
+        : `Google 로그인 중 문제가 발생했습니다: ${msg}`;
     }
   }
 }
