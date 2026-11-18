@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && (
+          request.auth.token.email == 'alamo99ko@gmail.com'
+          || exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        );
+    }
+
+    function isValidSurveyResponse(data) {
+      return data.keys().hasAll([
+        'trainingStage',
+        'ftdImpact',
+        'ftdNecessity',
+        'ftdOperationMode',
+        'neededSubjects',
+        'unnecessaryReasons',
+        'groundTrainingSuggestions',
+        'createdAt'
+      ])
+      && data.keys().hasOnly([
+        'trainingStage',
+        'ftdImpact',
+        'ftdNecessity',
+        'ftdOperationMode',
+        'neededSubjects',
+        'unnecessaryReasons',
+        'groundTrainingSuggestions',
+        'createdAt'
+      ])
+      && data.trainingStage is string
+      && data.trainingStage in ['PPL', 'IR', 'CPL', 'IP Time building']
+      && data.ftdImpact is string
+      && data.ftdImpact in ['a', 'b', 'c', 'd', 'e']
+      && data.ftdNecessity is string
+      && data.ftdNecessity in ['a', 'b', 'c', 'd', 'e']
+      && data.ftdOperationMode is string
+      && data.ftdOperationMode in ['a', 'b', 'c']
+      && data.neededSubjects is string
+      && data.neededSubjects.size() >= 1
+      && data.neededSubjects.size() <= 2000
+      && data.unnecessaryReasons is string
+      && data.unnecessaryReasons.size() >= 1
+      && data.unnecessaryReasons.size() <= 2000
+      && data.groundTrainingSuggestions is string
+      && data.groundTrainingSuggestions.size() >= 1
+      && data.groundTrainingSuggestions.size() <= 2000
+      && data.createdAt is timestamp
+      && data.createdAt == request.time;
+    }
+
+    match /survey_responses/{responseId} {
+      // Anonymous survey submission (no email/auth collected)
+      allow create: if isValidId(responseId) && isValidSurveyResponse(incoming());
+      // Admin-only inspection & deletion
+      allow get: if isValidId(responseId) && isAdmin();
+      allow list: if isAdmin();
+      allow update: if false;
+      allow delete: if isValidId(responseId) && isAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && isAdmin();
+      allow list, create, update, delete: if false;
+    }
+  }
+}

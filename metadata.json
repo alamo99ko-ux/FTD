@@ -1,0 +1,6 @@
+{
+  "name": "실 비행 전 FTD 활용 방안 설문 조사",
+  "description": "수색 비행교육원 비행교육 입과 전 FTD 시뮬레이션(Metor·RTD) 활용 방안에 대한 익명 설문 조사",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

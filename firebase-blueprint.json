@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "SurveyResponse": {
+      "title": "SurveyResponse",
+      "description": "Anonymous response to the pre-flight FTD utilization survey (all 7 items required, no email collected).",
+      "type": "object",
+      "properties": {
+        "trainingStage": {
+          "type": "string",
+          "enum": ["PPL", "IR", "CPL", "IP Time building"],
+          "maxLength": 32,
+          "description": "Q1: Current training stage"
+        },
+        "ftdImpact": {
+          "type": "string",
+          "enum": ["a", "b", "c", "d", "e"],
+          "maxLength": 8,
+          "description": "Q2: Impact of pre-flight FTD practice on flight training"
+        },
+        "ftdNecessity": {
+          "type": "string",
+          "enum": ["a", "b", "c", "d", "e"],
+          "maxLength": 8,
+          "description": "Q3: Necessity of pre-flight FTD practice"
+        },
+        "ftdOperationMode": {
+          "type": "string",
+          "enum": ["a", "b", "c"],
+          "maxLength": 8,
+          "description": "Q4: Preferred FTD training operation mode"
+        },
+        "neededSubjects": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "description": "Q5: Needed subjects or flight phases if FTD training is needed"
+        },
+        "unnecessaryReasons": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "description": "Q6: Reasons in order of importance if FTD training is deemed unnecessary"
+        },
+        "groundTrainingSuggestions": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "description": "Q7: Free-form suggestions for pre-flight ground training improvements"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server submission timestamp"
+        }
+      },
+      "required": [
+        "trainingStage",
+        "ftdImpact",
+        "ftdNecessity",
+        "ftdOperationMode",
+        "neededSubjects",
+        "unnecessaryReasons",
+        "groundTrainingSuggestions",
+        "createdAt"
+      ]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized survey administrator record keyed by Firebase Auth UID.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "maxLength": 254,
+          "description": "Administrator email address"
+        }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "/survey_responses/{responseId}": {
+      "schema": { "$ref": "#/entities/SurveyResponse" },
+      "description": "Anonymous FTD survey submissions; public create with strict schema validation, admin-only read/delete."
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Administrator allowlist documents."
+    }
+  }
+}
